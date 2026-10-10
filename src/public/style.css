@@ -1,0 +1,31 @@
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b0f17;
+}
+::-webkit-scrollbar-thumb {
+  background: #202b3c;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Tab active styles */
+.tab-btn.active {
+  color: #10b981;
+  border-bottom-color: #10b981;
+}
+
+/* Pulsing badge for active cooldowns */
+@keyframes softPulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+}
+
+.cooldown-badge {
+  animation: softPulse 2s infinite ease-in-out;
+}

@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Safe WhatsApp Outreach Hub</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b0f17;
+      color: #e2e8f0;
+      padding: 24px;
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 24px;
+    }
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .logo-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #06b6d4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+    }
+    .title-group h1 {
+      font-size: 20px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .shield-tag {
+      font-size: 11px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 600;
+    }
+    .title-group p {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .pacing-box {
+      background: #131b26;
+      border: 1px solid #1e293b;
+      padding: 8px 16px;
+      border-radius: 12px;
+      text-align: right;
+    }
+    .pacing-box span { display: block; }
+    .pacing-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 700; }
+    .pacing-count { font-size: 15px; font-weight: 800; color: #34d399; }
+
+    /* Layout Grid */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1.3fr;
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: #131b26;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #94a3b8;
+      margin-bottom: 18px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 6px;
+    }
+    textarea, select, input {
+      width: 100%;
+      background: #0f172a;
+      border: 1px solid #334155;
+      color: #f8fafc;
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+    }
+    textarea:focus, select:focus, input:focus {
+      border-color: #10b981;
+    }
+    .helper-text {
+      font-size: 11px;
+      color: #64748b;
+      margin-top: 4px;
+    }
+    .btn-primary {
+      width: 100%;
+      background: #059669;
+      color: white;
+      border: none;
+      padding: 12px 18px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: background 0.2s, transform 0.1s;
+    }
+    .btn-primary:hover { background: #10b981; }
+    .btn-primary:active { transform: scale(0.99); }
+
+    /* Queue Header */
+    .queue-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #1e293b;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .stat-pill {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 8px 12px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stat-pill .lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; }
+    .stat-pill .val { font-size: 16px; font-weight: 800; color: #fff; }
+
+    /* Contact List */
+    .contacts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 480px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .contact-row {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      padding: 12px 14px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .contact-row.opened {
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.05);
+    }
+    .contact-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .contact-idx {
+      font-size: 11px;
+      font-family: monospace;
+      color: #64748b;
+      width: 24px;
+    }
+    .contact-phone {
+      font-size: 13px;
+      font-weight: 700;
+      color: #fff;
+      font-family: monospace;
+    }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 6px;
+      margin-left: 6px;
+    }
+    .status-pending { background: #1e293b; color: #94a3b8; }
+    .status-opened { background: #064e3b; color: #34d399; border: 1px solid #059669; }
+
+    /* Action Links / Buttons */
+    .action-links {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .link-wa {
+      background: #059669;
+      color: #fff;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 7px 12px;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .link-wa:hover { background: #10b981; }
+    .link-web {
+      background: #1e293b;
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .link-web:hover { background: #334155; color: #fff; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #064e3b;
+      border: 1px solid #10b981;
+      color: #d1fae5;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+      z-index: 100;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  
+  <!-- Header -->
+  <header class="header">
+    <div class="logo-badge">
+      <div class="logo-icon">💬</div>
+      <div class="title-group">
+        <h1>Safe WhatsApp Outreach <span class="shield-tag">100% Ban-Proof</span></h1>
+        <p>Direct official link protocol &bull; Zero extensions &bull; Zero bot bans</p>
+      </div>
+    </div>
+    <div class="pacing-box">
+      <span class="pacing-label">Safe Session Pacing</span>
+      <span class="pacing-count" id="sessionPacing">0 / 20 Sent</span>
+    </div>
+  </header>
+
+  <!-- Layout -->
+  <div class="grid">
+    
+    <!-- Left Column: Input Form -->
+    <div class="card">
+      <h2 class="card-title">📝 1. Contacts & Message</h2>
+      <p class="card-desc">Paste your customer numbers and edit your pitch</p>
+
+      <div class="form-group">
+        <div class="form-label">
+          <span>Customer Numbers List</span>
+          <span id="validCountText" style="color: #38bdf8;">1 valid number</span>
+        </div>
+        <textarea id="numbersInput" rows="5" oninput="updateQueueLive()" placeholder="01712345678&#10;01898765432&#10;01518972643">01518972643</textarea>
+        <p class="helper-text">Bangladeshi numbers (e.g. <code>015...</code>, <code>017...</code>) are auto-formatted with +880.</p>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">
+          <span>Choose Ready-Made Pitch</span>
+        </div>
+        <select id="pitchSelect" onchange="applyPresetPitch()">
+          <option value="custom">✍️ Current Custom Pitch (Bengali Offer)</option>
+          <option value="promo">🎁 25% Special Discount Offer</option>
+          <option value="b2b">💼 B2B Business Agency Pitch</option>
+          <option value="free_audit">🤝 Free Strategy Consultation</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <div class="form-label">
+          <span>Your Attractive Message Text</span>
+        </div>
+        <textarea id="pitchText" rows="7" oninput="updateQueueLive()">• উইথড্র চার্জ: ১%
+প্রতিদিন প্রায় ২০ ঘন্টা সার্ভিস
+🔒 দ্রুত ও নির্ভরযোগ্য প্রসেস
+
+Telegram: https://t.me/+jzcRFd5TrugwZjFl
+Contact: https://t.me/WAYBEL20</textarea>
+      </div>
+
+      <button type="button" class="btn-primary" onclick="updateQueueLive(true)">
+        <span>⚡ Refresh Links</span>
+      </button>
+    </div>
+
+    <!-- Right Column: Direct 1-Click Launchers -->
+    <div class="card">
+      <div class="queue-top">
+        <div>
+          <h2 class="card-title">🚀 2. 1-Click WhatsApp Links</h2>
+          <p class="card-desc" style="margin-bottom:0">Click any green button to open chat with message pre-filled</p>
+        </div>
+        <button type="button" onclick="openNextContact()" class="btn-primary" style="width: auto; padding: 8px 14px; font-size: 12px; background: #0284c7;">
+          <span>🚀 Open Next</span>
+        </button>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-pill">
+          <div class="lbl">Total Contacts</div>
+          <div class="val" id="statTotal">1</div>
+        </div>
+        <div class="stat-pill">
+          <div class="lbl">Chats Opened</div>
+          <div class="val" id="statOpened" style="color: #34d399;">0</div>
+        </div>
+        <div class="stat-pill">
+          <div class="lbl">Remaining</div>
+          <div class="val" id="statRemaining" style="color: #38bdf8;">1</div>
+        </div>
+      </div>
+
+      <!-- Links Container -->
+      <div class="contacts-list" id="contactsContainer">
+        <!-- populated live -->
+      </div>
+
+      <div style="margin-top: 16px; background: rgba(15,23,42,0.6); padding: 10px 14px; border-radius: 10px; font-size: 11px; color: #94a3b8; border: 1px solid #1e293b;">
+        💡 <strong>How it works:</strong> Click <strong>"💬 Open Chat"</strong> $\rightarrow$ WhatsApp opens with your message already typed in the box. You simply tap <strong>Enter</strong>!
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+  const presets = {
+    custom: `• উইথড্র চার্জ: ১%\nপ্রতিদিন প্রায় ২০ ঘন্টা সার্ভিস\n🔒 দ্রুত ও নির্ভরযোগ্য প্রসেস\n\nTelegram: https://t.me/+jzcRFd5TrugwZjFl\nContact: https://t.me/WAYBEL20`,
+    promo: `Assalamu Alaikum! 🌟\nSpecial limited-time offer for your business: Get an exclusive *25% discount* on our services this week!\n\nReply to this message to claim this offer. Have a wonderful day! 😊`,
+    b2b: `Hello there! 🤝\nWe help companies grow their clients and sales through our proven solutions.\n\nWould you be open to a quick 2-minute chat to see how we can assist you?\nFeel free to reply here. Thank you!`,
+    free_audit: `Assalamu Alaikum! 👋\nWe are currently offering a *Free Strategy Consultation* for selected business owners.\n\nNo commitments—just actionable insights. Reply "YES" if you'd like to schedule a quick chat!`
+  };
+
+  let openedPhones = new Set();
+  let sessionCount = 0;
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.innerText = msg;
+    t.style.display = 'block';
+    setTimeout(() => { t.style.display = 'none'; }, 3500);
+  }
+
+  function applyPresetPitch() {
+    const val = document.getElementById('pitchSelect').value;
+    if (presets[val]) {
+      document.getElementById('pitchText').value = presets[val];
+      updateQueueLive();
+    }
+  }
+
+  function normalizeNumber(num) {
+    let clean = num.replace(/[^\d+]/g, '');
+    if (!clean) return null;
+    // 01X format (11 digits)
+    if (/^01[3-9]\d{8}$/.test(clean)) {
+      return '880' + clean.substring(1);
+    }
+    // +8801X format
+    if (/^\+8801[3-9]\d{8}$/.test(clean)) {
+      return clean.replace('+', '');
+    }
+    // 8801X format
+    if (/^8801[3-9]\d{8}$/.test(clean)) {
+      return clean;
+    }
+    if (clean.startsWith('+')) {
+      return clean.replace('+', '');
+    }
+    return clean.length >= 10 ? clean : null;
+  }
+
+  function parseNumbers() {
+    const raw = document.getElementById('numbersInput').value;
+    const lines = raw.split(/[\r\n,;]+/);
+    const valid = [];
+    lines.forEach(l => {
+      const norm = normalizeNumber(l.trim());
+      if (norm && !valid.includes(norm)) {
+        valid.push(norm);
+      }
+    });
+    return valid;
+  }
+
+  function updateQueueLive(showFeedback = false) {
+    const numbers = parseNumbers();
+    const message = document.getElementById('pitchText').value.trim();
+    const encoded = encodeURIComponent(message);
+
+    document.getElementById('validCountText').innerText = `${numbers.length} valid number(s)`;
+    document.getElementById('statTotal').innerText = numbers.length;
+
+    let openedCount = 0;
+    numbers.forEach(n => { if (openedPhones.has(n)) openedCount++; });
+
+    document.getElementById('statOpened').innerText = openedCount;
+    document.getElementById('statRemaining').innerText = Math.max(0, numbers.length - openedCount);
+
+    const container = document.getElementById('contactsContainer');
+
+    if (numbers.length === 0) {
+      container.innerHTML = `<div style="text-align: center; color: #64748b; padding: 40px 0; font-size: 13px;">Please enter at least one phone number on the left.</div>`;
+      return;
+    }
+
+    container.innerHTML = numbers.map((phone, idx) => {
+      const isOpened = openedPhones.has(phone);
+      const waUrl = `https://wa.me/${phone}?text=${encoded}`;
+      const webUrl = `https://web.whatsapp.com/send?phone=${phone}&text=${encoded}`;
+
+      return `
+        <div class="contact-row ${isOpened ? 'opened' : ''}" id="row-${phone}">
+          <div class="contact-info">
+            <span class="contact-idx">#${idx + 1}</span>
+            <div>
+              <span class="contact-phone">+${phone}</span>
+              <span class="status-badge ${isOpened ? 'status-opened' : 'status-pending'}">
+                ${isOpened ? '✓ OPENED' : 'PENDING'}
+              </span>
+            </div>
+          </div>
+          <div class="action-links">
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="link-wa" onclick="recordClick('${phone}')">
+              <span>💬 Open Chat</span>
+            </a>
+            <a href="${webUrl}" target="_blank" rel="noopener noreferrer" class="link-web" onclick="recordClick('${phone}')" title="Open in WhatsApp Web">
+              <span>Web</span>
+            </a>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    if (showFeedback) {
+      showToast('Links updated successfully!');
+    }
+  }
+
+  function recordClick(phone) {
+    openedPhones.add(phone);
+    sessionCount++;
+    document.getElementById('sessionPacing').innerText = `${sessionCount} / 20 Sent`;
+    
+    // Update row visual without destroying DOM
+    const row = document.getElementById(`row-${phone}`);
+    if (row) {
+      row.classList.add('opened');
+      const badge = row.querySelector('.status-badge');
+      if (badge) {
+        badge.className = 'status-badge status-opened';
+        badge.innerText = '✓ OPENED';
+      }
+    }
+
+    const numbers = parseNumbers();
+    let openedCount = 0;
+    numbers.forEach(n => { if (openedPhones.has(n)) openedCount++; });
+    document.getElementById('statOpened').innerText = openedCount;
+    document.getElementById('statRemaining').innerText = Math.max(0, numbers.length - openedCount);
+  }
+
+  function openNextContact() {
+    const numbers = parseNumbers();
+    const pending = numbers.find(n => !openedPhones.has(n));
+    if (!pending) {
+      alert('All contacts in your list have already been opened!');
+      return;
+    }
+    const message = document.getElementById('pitchText').value.trim();
+    const waUrl = `https://wa.me/${pending}?text=${encodeURIComponent(message)}`;
+    
+    recordClick(pending);
+    window.open(waUrl, '_blank');
+  }
+
+  // Initial render on load
+  window.addEventListener('DOMContentLoaded', () => {
+    updateQueueLive();
+  });
+</script>
+
+</body>
+</html>

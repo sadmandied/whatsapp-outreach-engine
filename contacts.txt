@@ -1,0 +1,19 @@
+# ==============================================================================
+# WhatsApp Outreach Contacts List
+# ==============================================================================
+# Instructions:
+# - Add one phone number per line.
+# - Lines starting with '#' or empty lines are automatically ignored.
+# - Numbers can include '+' or start with local prefixes (e.g., 017xxxxxxxx).
+# - Example formats supported:
+#     +8801700000000
+#     01700000000
+#     8801700000000
+#     +12345678900
+# ==============================================================================
+
++8801700000001
++8801700000002
++8801700000003
++8801800000001
++8801900000001
