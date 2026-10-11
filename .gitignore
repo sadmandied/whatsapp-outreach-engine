@@ -13,6 +13,11 @@ message.local.txt
 # Outreach history log containing real customer numbers
 sent_history.txt
 
+# Generated Campaign Reports (contains client numbers and delivery logs)
+reports/
+report_*.csv
+report_*.html
+
 # Environment variables & secrets
 .env
 *.env.local
@@ -31,6 +36,7 @@ __pycache__/
 build/
 develop-eggs/
 dist/
+*.spec
 downloads/
 eggs/
 .eggs/

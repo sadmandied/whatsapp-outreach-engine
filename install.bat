@@ -9,6 +9,8 @@ pip install -r requirements.txt
 echo.
 echo ===================================================
 echo [OK] Installation completed successfully!
-echo You can now double-click 'run_auto_outreach.bat'
+echo.
+echo - To launch the Modern Desktop GUI: double-click 'run_gui.bat'
+echo - To launch the Command-Line CLI:   double-click 'run_auto_outreach.bat'
 echo ===================================================
 pause

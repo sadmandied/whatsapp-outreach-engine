@@ -1,16 +1,16 @@
-Hello! 👋
+{Hello|Hi|Greetings} {name}! 👋
 
-We are excited to share an exclusive update regarding our premium services.
+We are {excited|pleased} to share an exclusive update regarding our {premium|specialized} services.
 
 Special Benefits for New Clients:
 • Instant Processing & 24/7 Dedicated Support
 • Transparent Pricing with Zero Hidden Fees
 • Special Welcome Bonus on your first transaction
 
-Use Promo Code: WELCOME2026
+Use Promo Code: {WELCOME2026|BONUS2026|SPECIALVIP}
 
 Get started or speak with our team:
 📱 Support: https://t.me/example_support
 🌐 Channel: https://t.me/example_channel
 
-Feel free to reply directly to this message if you have any questions!
+{Feel free to reply directly to this message if you have any questions!|Let us know if you need any assistance!}

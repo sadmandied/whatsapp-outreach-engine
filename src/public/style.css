@@ -1,31 +1,32 @@
-/* Custom scrollbars */
+/* Modern Restrained Scrollbars & Focus States */
+:root {
+  --bg: #0D1117;
+  --surface: #161B22;
+  --surface-subtle: #21262D;
+  --border: #30363D;
+  --border-muted: #21262D;
+  --text-primary: #E6EDF3;
+  --text-secondary: #8B949E;
+  --text-dim: #484F58;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #0b0f17;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #202b3c;
-  border-radius: 9999px;
+  background: var(--surface-subtle);
+  border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: var(--border);
 }
 
-/* Tab active styles */
 .tab-btn.active {
-  color: #10b981;
-  border-bottom-color: #10b981;
-}
-
-/* Pulsing badge for active cooldowns */
-@keyframes softPulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(0.98); }
-}
-
-.cooldown-badge {
-  animation: softPulse 2s infinite ease-in-out;
+  color: var(--text-primary);
+  background: var(--surface-subtle);
+  border-color: var(--border);
 }
