@@ -218,20 +218,22 @@ class OutreachEngine:
                 return result
 
             # A. Check for 'Phone number shared via url is invalid' popup
-            invalid_popup = page.query_selector('div[data-animate-modal-body="true"], div[data-tab="3"]')
-            if invalid_popup and "invalid" in (invalid_popup.inner_text() or "").lower():
-                self.log(f"Phone +{phone} is not registered on WhatsApp. Skipping.", "warning")
-                result["status"] = "NOT_ON_WHATSAPP"
-                result["notes"] = "Unregistered phone number"
+            invalid_popup = page.query_selector('div[data-animate-modal-body="true"], div[data-tab="3"], div[role="dialog"]')
+            if invalid_popup:
+                modal_text = (invalid_popup.inner_text() or "").lower()
+                if any(k in modal_text for k in ["invalid", "isn't on whatsapp", "not on whatsapp", "not registered"]):
+                    self.log(f"Phone +{phone} is not registered on WhatsApp. Skipping.", "warning")
+                    result["status"] = "NOT_ON_WHATSAPP"
+                    result["notes"] = "Unregistered phone number"
 
-                # Dismiss modal
-                try:
-                    ok_btn = page.query_selector('button:has-text("OK"), div[role="button"]:has-text("OK")')
-                    if ok_btn:
-                        ok_btn.click()
-                except Exception:
-                    pass
-                return result
+                    # Dismiss modal
+                    try:
+                        ok_btn = page.query_selector('button:has-text("OK"), div[role="button"]:has-text("OK"), button[aria-label="OK"]')
+                        if ok_btn:
+                            ok_btn.click()
+                    except Exception:
+                        pass
+                    return result
 
             # B. If Media Attachment is specified, attach flyer
             if media_path and os.path.exists(media_path):
