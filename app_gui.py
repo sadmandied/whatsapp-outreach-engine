@@ -92,8 +92,25 @@ class ModernOutreachApp(ctk.CTk):
         self.title("WhatsApp Outreach Engine")
         self.geometry("1140x780")
         self.minsize(900, 600)
-        self.configure(fg_color=THEME["bg"])
+        # Ensure Windows taskbar groups with custom icon
+        if sys.platform == "win32":
+            try:
+                import ctypes
+                myappid = "sadman.whatsapp.outreach.engine.1.3"
+                ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+            except Exception:
+                pass
 
+        # Window & Taskbar Icon
+        self.icon_ico_path = os.path.join(BASE_DIR, "assets", "icon.ico")
+        self.icon_png_path = os.path.join(BASE_DIR, "assets", "icon.png")
+        if os.path.exists(self.icon_ico_path):
+            try:
+                self.iconbitmap(self.icon_ico_path)
+            except Exception:
+                pass
+
+        self.configure(fg_color=THEME["bg"])
         ctk.set_appearance_mode("dark")
 
         # Runtime Engine References
@@ -136,6 +153,19 @@ class ModernOutreachApp(ctk.CTk):
         # App Brand & Version
         brand_box = ctk.CTkFrame(navbar, fg_color="transparent")
         brand_box.grid(row=0, column=0, padx=20, pady=10, sticky="w")
+
+        if os.path.exists(self.icon_png_path):
+            try:
+                from PIL import Image
+                self.logo_image = ctk.CTkImage(
+                    light_image=Image.open(self.icon_png_path),
+                    dark_image=Image.open(self.icon_png_path),
+                    size=(22, 22)
+                )
+                icon_lbl = ctk.CTkLabel(brand_box, image=self.logo_image, text="")
+                icon_lbl.pack(side="left", padx=(0, 8))
+            except Exception:
+                pass
 
         title_lbl = ctk.CTkLabel(
             brand_box,

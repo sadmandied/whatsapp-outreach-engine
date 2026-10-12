@@ -94,7 +94,8 @@ Double-click **`install.bat`** (or run `pip install -r requirements.txt`).
 ## 🚀 How to Use
 
 ### Option A: Modern Desktop GUI (Recommended)
-Double-click **`run_gui.bat`** (or run `python app_gui.py`).
+Double-click **`WhatsApp Outreach Engine.lnk`** or **`run_gui.bat`** (or run `python app_gui.py`).
+*(To create the desktop shortcut with the custom green icon anytime, double-click `create_shortcut.bat`).*
 1. **Choose Profile:** Select your WhatsApp account profile from the top bar.
 2. **Select Contacts:** Choose your `.txt` or `.csv` file. Click **Clean & Export List** anytime to purge bad numbers.
 3. **Pick a Message Preset:** Choose from pre-saved pitches (VIP Bonus, Follow-up, Re-engagement) or write custom Spintax copy.
@@ -141,6 +142,9 @@ Use `{name}`, `{company}`, or `{phone}` inside your message to personalize autom
 ```text
 ├── app_gui.py              # Modern dark-mode Desktop GUI (CustomTkinter)
 ├── auto_outreach.py        # Core CLI outreach automation launcher
+├── assets/
+│   ├── icon.ico            # Multi-resolution Windows app icon (16x16 to 256x256)
+│   └── icon.png            # High-resolution application brand emblem
 ├── core/
 │   ├── __init__.py
 │   ├── spintax.py          # Spintax & template variable resolver
@@ -157,6 +161,8 @@ Use `{name}`, `{company}`, or `{phone}` inside your message to personalize autom
 ├── requirements.txt        # Python dependencies
 ├── install.bat             # 1-click dependency installer for Windows
 ├── build_exe.bat           # 1-click standalone executable builder (PyInstaller)
+├── create_shortcut.bat     # 1-click desktop & project shortcut generator
+├── create_shortcut.ps1     # PowerShell script creating .lnk with custom icon
 ├── run_gui.bat             # 1-click Desktop GUI launcher
 ├── run_auto_outreach.bat   # 1-click CLI launcher
 ├── .gitignore              # Strictly protects session keys, reports, and local data
