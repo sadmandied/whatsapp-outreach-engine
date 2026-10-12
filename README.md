@@ -6,23 +6,28 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Anti--Ban](https://img.shields.io/badge/Pacing-Anti--Ban%20Protected-brightgreen)](#-anti-ban-engineering)
 
-A resilient, open-source automated outreach engine for **WhatsApp Web**, engineered with **Playwright**, a **modern dark-mode Desktop GUI**, **Spintax dynamic message variation**, **CSV personalization**, **optional media attachments**, and **HTML campaign analytics reporting**.
+A resilient, open-source automated outreach engine for **WhatsApp Web**, engineered with **Playwright**, a **modern dark-mode Desktop GUI (Linear/GitHub aesthetic)**, **Spintax dynamic message variation**, **CSV personalization**, **optional media attachments**, **HTML campaign analytics reporting**, **template preset manager**, **blacklist protection**, and **multi-account profile switching**.
 
-Designed specifically for online businesses, agencies, and solo entrepreneurs who need reliable, free, and safe client communication without paying for overpriced SaaS tools or risking bans from shady Chrome extensions.
+Designed specifically for online businesses, agencies, and entrepreneurs who need reliable, free, and safe client communication without paying for overpriced SaaS subscriptions or risking bans from sketchy Chrome extensions.
 
 ---
 
-## 🌟 What Makes This Stand Out
+## 🌟 Key Capabilities
 
 | Feature | Description |
 | :--- | :--- |
-| **🖥️ Modern Desktop GUI** | Sleek dark-mode desktop app with live progress bars, pause/resume/stop buttons, and real-time activity logs. |
+| **🖥️ Modern Desktop GUI** | Sleek dark-mode desktop app with responsive resizing, live progress bar, pause/resume/cancel controls, and real-time activity stream. |
 | **🔀 Spintax Variations** | Generate unique message hashes on the fly (`{Hello\|Hi\|Greetings}`) to defeat automated spam fingerprinting. |
 | **🏷️ CSV Personalization** | Address clients by name or company from Excel/CSV (`{name}`, `{company}`) for 3x higher response rates. |
+| **📂 Template Presets** | Built-in message library with 1-click dropdown switching and "Save As" preset management (`templates.json`). |
+| **🚫 Blacklist Protection** | Never contact opted-out leads, friends, or staff—automatically excluded via `blacklist.txt`. |
+| **🧹 1-Click Lead Cleaner** | Auto-strips duplicates, invalid formats, previously contacted numbers, and confirmed non-WhatsApp numbers into a pure clean export. |
+| **👥 Multi-Account Switching** | Seamlessly manage multiple WhatsApp SIM cards/accounts with isolated browser session profiles (`wa_profile/`, `wa_profile_2/`). |
+| **⏰ Hands-Free Scheduler** | Set execution times (e.g., `14:30`) or countdown delays (`+45 mins`) with live countdown telemetry. |
+| **🛡️ Account Warm-Up Mode** | Enforces gentle batch limits and relaxed delay jitter (25s–45s) for brand-new SIMs or fresh numbers. |
 | **🖼️ Media Attachments** | Send visual promo flyers/banners along with your tailored captions. |
-| **📊 HTML & CSV Analytics** | Automatic export of post-campaign delivery dashboards with KPI cards and delivery timestamps. |
-| **🛡️ Algorithmic Pacing** | Natural human jitter (15–28s) and safe batch boundaries (15–20 contacts) to protect account reputation. |
-| **🔄 Persistent Session** | Scan the QR code once; session credentials persist across restarts in a private local profile. |
+| **📊 HTML & CSV Analytics** | Automatic export of post-campaign delivery dashboards with search, status filters, and CSV exports. |
+| **🔄 Persistent Chrome** | Chrome runs as an independent detached process via CDP—stays open on your screen even when you close the app. |
 
 ---
 
@@ -35,9 +40,10 @@ Most bulk WhatsApp senders get accounts banned because of two major flaws:
 ### 🛡️ How This Engine Protects Your Account:
 * **Native Playwright Browser Protocol:** Runs inside an official Google Chrome instance with native trusted DOM events (`isTrusted: true`)—identical to a human clicking.
 * **Spintax Hash Neutralization:** Generates slightly different text variations for every contact, preventing hash clustering.
-* **Algorithmic Human Jitter:** Enforces randomized pauses (**15 to 28 seconds**) between dispatches to mimic natural reading and typing habits.
+* **Algorithmic Human Jitter:** Enforces randomized pauses (**15 to 28 seconds** in normal mode, **25 to 45 seconds** in warm-up mode) to mimic natural human pacing.
 * **Safe Session Batching:** Built-in safeguards recommend processing in batches of **15–20 contacts** per session.
-* **Duplicate Protection:** Automatically tracks completed dispatches in `sent_history.txt` so leads are never spammed twice.
+* **Unregistered Number Auto-Dismissal:** Detects non-WhatsApp numbers, auto-clicks "OK", logs the lead, and moves to the next contact without getting stuck.
+* **Duplicate & Blacklist Protection:** Automatically excludes previous recipients in `sent_history.txt` and protected contacts in `blacklist.txt`.
 
 ---
 
@@ -45,22 +51,25 @@ Most bulk WhatsApp senders get accounts banned because of two major flaws:
 
 ```mermaid
 flowchart TD
-    A["Contacts Input (.txt / .csv)"] --> B["Duplicate Filter (sent_history.txt)"]
-    B --> C{"Queue Available?"}
-    C -- No --> D["Campaign Complete"]
-    C -- Yes --> E["Load Playwright Persistent Chrome"]
-    E --> F["Load Cached WhatsApp Session"]
+    A["Contacts Queue (.txt / .csv)"] --> B["Blacklist Filter (blacklist.txt)"]
+    B --> C["Duplicate Filter (sent_history.txt)"]
+    C --> D{"Queue Available?"}
+    D -- No --> E["Campaign Finished"]
+    D -- Yes --> F["Connect Persistent Chrome (CDP)"]
     F --> G["Resolve Tags & Spintax Variations"]
     G --> H{"Media Attached?"}
     H -- Yes --> I["Upload Image + Attach Caption"]
     H -- No --> J["Open Direct Conversation Link"]
-    I --> K["Dynamic Wait & Dispatch Click"]
+    I --> K["Dynamic Wait & Verify Registered"]
     J --> K
-    K --> L["Record to sent_history.txt & Session Log"]
-    L --> M{"Last Contact in Batch?"}
-    M -- Yes --> N["Generate HTML & CSV Reports"]
-    M -- No --> O["Random Human Delay (15s - 28s)"]
-    O --> G
+    K -- "Not on WhatsApp" --> L["Dismiss Modal & Log Unregistered"]
+    K -- "Valid Chat" --> M["Locate Send & Dispatch Click"]
+    M --> N["Record to sent_history.txt"]
+    L --> O{"Last Contact in Batch?"}
+    N --> O
+    O -- Yes --> P["Generate HTML & CSV Reports (Chrome Stays Open)"]
+    O -- No --> Q["Random Human Delay (15s - 28s / Warm-up 25s - 45s)"]
+    Q --> G
 ```
 
 ---
@@ -73,20 +82,12 @@ flowchart TD
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/whatsapp-outreach-engine.git
+git clone https://github.com/sadmandied/whatsapp-outreach-engine.git
 cd whatsapp-outreach-engine
 ```
 
-### 2. Install Dependencies
-You can install dependencies using the 1-click Windows installer or via terminal:
-
-**Windows (1-Click):**
-Double-click `install.bat`
-
-**Terminal:**
-```bash
-pip install -r requirements.txt
-```
+### 2. 1-Click Install (Windows)
+Double-click **`install.bat`** (or run `pip install -r requirements.txt`).
 
 ---
 
@@ -94,14 +95,21 @@ pip install -r requirements.txt
 
 ### Option A: Modern Desktop GUI (Recommended)
 Double-click **`run_gui.bat`** (or run `python app_gui.py`).
-1. Select your contacts file (`.txt` or `.csv`).
-2. Write or adjust your message template using `{name}` and `{Option 1|Option 2}` Spintax.
-3. (Optional) Choose a promo flyer image.
-4. Click **▶ Start Campaign**!
+1. **Choose Profile:** Select your WhatsApp account profile from the top bar.
+2. **Select Contacts:** Choose your `.txt` or `.csv` file. Click **Clean & Export List** anytime to purge bad numbers.
+3. **Pick a Message Preset:** Choose from pre-saved pitches (VIP Bonus, Follow-up, Re-engagement) or write custom Spintax copy.
+4. **(Optional) Attach Flyer:** Select a promo poster or banner.
+5. **Start or Schedule:** Click **▶ Start Queue**, **⏰ Schedule**, or **🧪 Test (1 Lead)**!
 
 ### Option B: Command-Line Interface (CLI)
 Double-click **`run_auto_outreach.bat`** (or run `python auto_outreach.py`).
-Follow the interactive terminal prompts to choose Test Mode (`1`) or Safe Batch Mode (`2`).
+```bash
+# Run with custom profile and warm-up mode
+python auto_outreach.py --profile Account2 --warmup --batch 10
+
+# Clean your contacts file
+python auto_outreach.py --clean
+```
 
 ---
 
@@ -118,7 +126,7 @@ We are {excited|pleased} to share our {special|exclusive} offer with you today.
 * Contact 2 receives: *"Hi Rafiq! We are pleased to share our exclusive offer..."*
 
 ### 2. CSV Columns
-You can load a `contacts.csv` with custom columns:
+Load any `contacts.csv` with standard headers:
 ```csv
 Phone,Name,Company,Notes
 +8801700000001,Tanvir,Alpha Trading,VIP Client
@@ -136,17 +144,22 @@ Use `{name}`, `{company}`, or `{phone}` inside your message to personalize autom
 ├── core/
 │   ├── __init__.py
 │   ├── spintax.py          # Spintax & template variable resolver
-│   ├── contact_loader.py   # TXT & CSV parser with phone normalization
-│   ├── reports.py          # HTML dashboard & CSV analytics generator
-│   └── engine.py           # Thread-safe Playwright background orchestrator
+│   ├── contact_loader.py   # TXT & CSV parser, blacklist, and lead cleaner
+│   ├── templates.py        # Template preset library manager (templates.json)
+│   ├── scheduler.py        # Background timed campaign scheduler
+│   ├── reports.py          # HTML analytics dashboard & CSV log generator
+│   └── engine.py           # Thread-safe Playwright persistent CDP orchestrator
 ├── contacts.txt            # Sample plain numbers list
 ├── contacts.sample.csv     # Sample CSV demonstrating {name} & {company}
+├── blacklist.sample.txt    # Sample blacklist exclusion file
 ├── message.txt             # Sample outreach copy with Spintax syntax
+├── templates.json          # Default message presets (VIP, Follow-up, etc.)
 ├── requirements.txt        # Python dependencies
 ├── install.bat             # 1-click dependency installer for Windows
+├── build_exe.bat           # 1-click standalone executable builder (PyInstaller)
 ├── run_gui.bat             # 1-click Desktop GUI launcher
 ├── run_auto_outreach.bat   # 1-click CLI launcher
-├── .gitignore              # Ignores wa_profile/, local leads, and reports
+├── .gitignore              # Strictly protects session keys, reports, and local data
 ├── LICENSE                 # MIT Open-Source License
 └── README.md               # Project documentation
 ```
@@ -156,16 +169,12 @@ Use `{name}`, `{company}`, or `{phone}` inside your message to personalize autom
 ## 🔒 Privacy & Security
 
 > [!IMPORTANT]
-> **Never commit your `wa_profile/` directory!**  
-> The `wa_profile/` directory contains active session cookies and encryption keys for your WhatsApp account. It is pre-configured in `.gitignore` to prevent accidental uploads.
-
----
-
-## ⚖️ Ethical Use & Disclaimer
-
-This software is developed strictly for educational and legitimate business communications (e.g., reaching opted-in customers, customer support notification dispatches, and transactional updates). 
-
-Please ensure your outreach complies with the [WhatsApp Terms of Service](https://www.whatsapp.com/legal/terms-of-service) and local telecommunication privacy laws. The authors and contributors are not responsible for any misuse, spamming, or account restrictions.
+> **Your private data never touches Git!**  
+> All sensitive files are pre-configured in `.gitignore`:
+> * `wa_profile*/` (Active browser session tokens & encryption keys)
+> * `*.local.txt` (Your real customer contacts, copy, and blacklist)
+> * `sent_history.txt` (Historical recipient log)
+> * `reports/` (Generated delivery analytics)
 
 ---
 

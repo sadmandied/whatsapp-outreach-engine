@@ -19,7 +19,7 @@ import shutil
 import subprocess
 import urllib.parse
 from datetime import datetime
-from typing import List, Dict, Any, Optional, Callable
+from typing import List, Dict, Any, Optional, Callable, Set, Tuple
 from threading import Event
 
 from playwright.sync_api import sync_playwright, Page, BrowserContext
@@ -107,7 +107,18 @@ def launch_detached_chrome(profile_dir: str, port: int = CDP_PORT) -> bool:
             return True
         time.sleep(0.5)
 
-    return is_cdp_active(port)
+def get_profile_info(base_dir: str, profile_name: str = "default") -> Tuple[str, int]:
+    """
+    Returns (profile_dir, cdp_port) for a given profile name.
+    Default profile uses wa_profile/ on port 9222.
+    Secondary profiles use wa_profile_<name>/ on dedicated ports (9223+).
+    """
+    safe = "".join(c for c in profile_name.lower().strip() if c.isalnum() or c in "-_")
+    if not safe or safe in ["default", "main", "primary"]:
+        return os.path.join(base_dir, "wa_profile"), CDP_PORT
+    
+    port_offset = (sum(ord(c) for c in safe) % 25) + 1
+    return os.path.join(base_dir, f"wa_profile_{safe}"), CDP_PORT + port_offset
 
 
 class OutreachEngine:
@@ -118,6 +129,7 @@ class OutreachEngine:
         profile_dir: str,
         history_file: str,
         reports_dir: str,
+        port: int = CDP_PORT,
         on_log: Optional[Callable[[str, str], None]] = None,
         on_progress: Optional[Callable[[int, int, str, str, str, int], None]] = None,
         on_finished: Optional[Callable[[Dict[str, Any]], None]] = None,
@@ -125,6 +137,7 @@ class OutreachEngine:
         self.profile_dir = profile_dir
         self.history_file = history_file
         self.reports_dir = reports_dir
+        self.port = port
         self.on_log = on_log or (lambda msg, lvl="info": print(f"[{lvl.upper()}] {msg}"))
         self.on_progress = on_progress
         self.on_finished = on_finished
@@ -312,6 +325,8 @@ class OutreachEngine:
         media_path: Optional[str] = None,
         min_delay: int = 15,
         max_delay: int = 28,
+        blacklist: Optional[Set[str]] = None,
+        warmup_mode: bool = False,
         keep_browser_open: bool = True
     ) -> Dict[str, Any]:
         """
@@ -322,6 +337,20 @@ class OutreachEngine:
         self.cancel_event.clear()
         self.pause_event.set()
 
+        # Enforce blacklist exclusions
+        if blacklist:
+            orig_len = len(queue)
+            queue = [c for c in queue if c.get("phone") not in blacklist]
+            excluded_bl = orig_len - len(queue)
+            if excluded_bl > 0:
+                self.log(f"Excluded {excluded_bl} lead(s) matching your blacklist.", "warning")
+
+        # Enforce warm-up pacing
+        if warmup_mode:
+            min_delay = max(min_delay, 25)
+            max_delay = max(max_delay, 45)
+            self.log("Account Warm-Up Mode Active: Enforcing relaxed delay pacing (25s - 45s).", "info")
+
         total = len(queue)
         records: List[Dict[str, Any]] = []
         sent_count = 0
@@ -330,17 +359,18 @@ class OutreachEngine:
         self.log(f"Starting outreach campaign for {total} contact(s)...", "info")
         os.makedirs(self.profile_dir, exist_ok=True)
 
-        # 1. Ensure Chrome is running detached
-        self.log("Initializing persistent Chrome session (detached process)...", "info")
-        chrome_ready = launch_detached_chrome(self.profile_dir, port=CDP_PORT)
+        # 1. Ensure Chrome is running detached on profile port
+        target_port = getattr(self, "port", CDP_PORT)
+        self.log(f"Initializing persistent Chrome session (detached process on port {target_port})...", "info")
+        chrome_ready = launch_detached_chrome(self.profile_dir, port=target_port)
 
         with sync_playwright() as p:
             context: BrowserContext
             page: Page
 
-            if chrome_ready and is_cdp_active(CDP_PORT):
-                self.log(f"Connecting to persistent Chrome via CDP port {CDP_PORT}...", "info")
-                browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{CDP_PORT}")
+            if chrome_ready and is_cdp_active(target_port):
+                self.log(f"Connecting to persistent Chrome via CDP port {target_port}...", "info")
+                browser = p.chromium.connect_over_cdp(f"http://127.0.0.1:{target_port}")
                 context = browser.contexts[0] if browser.contexts else browser.new_context()
 
                 # Find existing WhatsApp page or open new page

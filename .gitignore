@@ -9,6 +9,10 @@ wa_profile*
 *.local.txt
 contacts.local.txt
 message.local.txt
+blacklist.local.txt
+blacklist.txt
+templates.local.json
+contacts_clean_*
 
 # Outreach history log containing real customer numbers
 sent_history.txt

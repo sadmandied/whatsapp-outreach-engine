@@ -1,0 +1,12 @@
+# Blacklist / Do-Not-Contact List
+# ============================================
+# Phone numbers listed here will NEVER be contacted by the outreach engine,
+# even if they appear in your contacts file or queue.
+#
+# Formats supported:
+#   +8801700000099
+#   01700000099
+#   8801700000099
+#
++8801700000099
+01800000098
