@@ -1,5 +1,6 @@
 # 🚀 WhatsApp Safe Outreach Automation Engine (Pro)
 
+[![Python Code Verification](https://github.com/sadmandied/whatsapp-outreach-engine/actions/workflows/python-ci.yml/badge.svg)](https://github.com/sadmandied/whatsapp-outreach-engine/actions)
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-Automation-green?logo=playwright&logoColor=white)](https://playwright.dev/)
 [![CustomTkinter](https://img.shields.io/badge/GUI-CustomTkinter-blueviolet)](https://github.com/TomSchimansky/CustomTkinter)
