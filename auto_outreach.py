@@ -14,6 +14,7 @@ from datetime import datetime
 from core.contact_loader import (
     load_contacts,
     load_sent_history,
+    load_processed_numbers,
     load_blacklist,
     export_cleaned_contacts,
 )
@@ -104,7 +105,7 @@ def main() -> None:
         print(f"[!] No valid contacts found in: {args.contacts}")
         return
 
-    sent_history = load_sent_history(SENT_HISTORY)
+    sent_history = load_processed_numbers(SENT_HISTORY, REPORTS_DIR)
     blacklist = load_blacklist(args.blacklist)
 
     pending_contacts = [c for c in all_contacts if c["phone"] not in sent_history and c["phone"] not in blacklist]
@@ -116,7 +117,7 @@ def main() -> None:
     print(f"[*] Profile:                         {args.profile} (Port {cdp_port})")
     print(f"[*] Total valid numbers found:       {len(all_contacts)}")
     print(f"[*] Excluded (Blacklisted):          {blacklisted_count}")
-    print(f"[*] Already contacted previously:    {len(sent_history)}")
+    print(f"[*] Already processed previously:    {len(sent_history)}")
     print(f"[*] Pending outreach queue:          {len(pending_contacts)}")
     if args.warmup:
         print(f"[*] Warm-up mode:                    ACTIVE (25s - 45s relaxed delays)")

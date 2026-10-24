@@ -25,7 +25,7 @@ from threading import Event
 from playwright.sync_api import sync_playwright, Page, BrowserContext
 
 from core.spintax import render_message
-from core.contact_loader import record_sent_number
+from core.contact_loader import record_sent_number, record_excluded_number
 from core.reports import generate_campaign_reports
 
 CDP_PORT = 9222
@@ -242,6 +242,19 @@ class OutreachEngine:
                 return result
 
             try:
+                # Check for blocked contact on WhatsApp
+                try:
+                    unblock_btn = page.query_selector('button:has-text("Unblock"), div[role="button"]:has-text("Unblock"), span:has-text("Unblock")')
+                    del_btn = page.query_selector('button:has-text("Delete chat"), div[role="button"]:has-text("Delete chat")')
+                    if unblock_btn or del_btn:
+                        self.log(f"Phone +{phone} is blocked on this account. Skipping.", "warning")
+                        result["status"] = "BLOCKED"
+                        result["notes"] = "Contact is blocked on WhatsApp"
+                        record_excluded_number(self.history_file, phone, "BLOCKED")
+                        return result
+                except Exception:
+                    pass
+
                 # A. Check for 'Phone number shared via url is invalid' popup
                 dialogs = page.query_selector_all('div[role="dialog"], [aria-modal="true"], div[data-animate-modal-body="true"]')
                 for dialog in dialogs:
@@ -251,6 +264,7 @@ class OutreachEngine:
                             self.log(f"Phone +{phone} is not registered on WhatsApp. Skipping.", "warning")
                             result["status"] = "NOT_ON_WHATSAPP"
                             result["notes"] = "Unregistered phone number"
+                            record_excluded_number(self.history_file, phone, "NOT_ON_WHATSAPP")
 
                             # Dismiss modal
                             try:
@@ -330,6 +344,7 @@ class OutreachEngine:
             result["status"] = "FAILED"
             result["notes"] = "Timed out waiting for Send confirmation"
             self.log(f"Delivery timed out for +{phone}.", "error")
+            record_excluded_number(self.history_file, phone, "FAILED")
 
         return result
 

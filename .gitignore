@@ -16,6 +16,7 @@ contacts_clean_*
 
 # Outreach history log containing real customer numbers
 sent_history.txt
+excluded_history.txt
 
 # Generated Campaign Reports (contains client numbers and delivery logs)
 reports/

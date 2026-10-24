@@ -51,6 +51,41 @@ def record_sent_number(history_file: str, phone: str) -> None:
         f.write(phone + "\n")
 
 
+def record_excluded_number(history_file: str, phone: str, reason: str = "EXCLUDED") -> None:
+    """Records an unregistered, blocked, or failed number so it is never retried in future batches."""
+    base_dir = os.path.dirname(os.path.abspath(history_file))
+    excluded_file = os.path.join(base_dir, "excluded_history.txt")
+    with open(excluded_file, "a", encoding="utf-8") as f:
+        f.write(phone + "\n")
+
+
+def load_processed_numbers(history_file: str, reports_dir: Optional[str] = None) -> Set[str]:
+    """
+    Returns a unified set of all numbers that have already been resolved and
+    must NOT be contacted or retried:
+    1. Successfully sent numbers (sent_history.txt)
+    2. Excluded numbers (unregistered, blocked, failed from excluded_history.txt)
+    3. Confirmed unregistered/blocked numbers from past reports/*.csv
+    """
+    processed: Set[str] = set()
+    if os.path.exists(history_file):
+        processed.update(load_sent_history(history_file))
+
+    base_dir = os.path.dirname(os.path.abspath(history_file))
+    excluded_file = os.path.join(base_dir, "excluded_history.txt")
+    if os.path.exists(excluded_file):
+        with open(excluded_file, "r", encoding="utf-8") as f:
+            for line in f:
+                p = normalize_phone(line.strip())
+                if p:
+                    processed.add(p)
+
+    if reports_dir and os.path.exists(reports_dir):
+        processed.update(get_unregistered_history(reports_dir))
+
+    return processed
+
+
 def load_blacklist(blacklist_file: Optional[str] = None) -> Set[str]:
     """
     Loads and normalizes all blacklisted phone numbers from blacklist.local.txt or blacklist.txt.

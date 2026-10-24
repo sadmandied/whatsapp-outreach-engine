@@ -8,6 +8,8 @@ from core.contact_loader import (
     normalize_phone,
     load_sent_history,
     record_sent_number,
+    record_excluded_number,
+    load_processed_numbers,
     load_blacklist,
     export_cleaned_contacts,
 )

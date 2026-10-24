@@ -27,6 +27,7 @@ from tkinter import filedialog, messagebox, simpledialog
 from core.contact_loader import (
     load_contacts,
     load_sent_history,
+    load_processed_numbers,
     load_blacklist,
     export_cleaned_contacts,
 )
@@ -900,14 +901,15 @@ class ModernOutreachApp(ctk.CTk):
         path = self.contacts_entry.get().strip()
         if os.path.exists(path):
             contacts = load_contacts(path)
-            history = load_sent_history(SENT_HISTORY)
+            history = load_processed_numbers(SENT_HISTORY, REPORTS_DIR)
             blacklist = load_blacklist(self.blacklist_path)
             pending = [c for c in contacts if c["phone"] not in history and c["phone"] not in blacklist]
             total = len(contacts)
             p_len = len(pending)
             bl_count = sum(1 for c in contacts if c["phone"] in blacklist)
+            processed_count = sum(1 for c in contacts if c["phone"] in history)
             self.contacts_meta_lbl.configure(
-                text=f"{p_len} pending ({bl_count} blacklisted, {total - p_len - bl_count} sent of {total} total)"
+                text=f"{p_len} pending ({bl_count} blacklisted, {processed_count} processed of {total} total)"
             )
             self.kpi_queue.configure(text=str(p_len))
         else:
@@ -1085,7 +1087,7 @@ class ModernOutreachApp(ctk.CTk):
             return
 
         contacts = load_contacts(c_path)
-        history = load_sent_history(SENT_HISTORY)
+        history = load_processed_numbers(SENT_HISTORY, REPORTS_DIR)
         blacklist = load_blacklist(self.blacklist_path)
         pending = [c for c in contacts if c["phone"] not in history and c["phone"] not in blacklist]
 
@@ -1103,8 +1105,7 @@ class ModernOutreachApp(ctk.CTk):
         self._run_dispatch_thread([target_contact], template, media, 1, 2, warmup=False)
 
     def _start_campaign(self):
-        if self.scheduler.is_active():
-            self.schedule_banner.grid_forget()
+        self.schedule_banner.grid_forget()
 
         c_path = self.contacts_entry.get().strip()
         template = self.message_box.get("1.0", "end").strip()
@@ -1115,7 +1116,7 @@ class ModernOutreachApp(ctk.CTk):
             return
 
         contacts = load_contacts(c_path)
-        history = load_sent_history(SENT_HISTORY)
+        history = load_processed_numbers(SENT_HISTORY, REPORTS_DIR)
         blacklist = load_blacklist(self.blacklist_path)
         pending = [c for c in contacts if c["phone"] not in history and c["phone"] not in blacklist]
 
@@ -1185,7 +1186,7 @@ class ModernOutreachApp(ctk.CTk):
                     # Check pending count
                     c_path = self.contacts_entry.get().strip()
                     contacts = load_contacts(c_path) if os.path.exists(c_path) else []
-                    history = load_sent_history(SENT_HISTORY)
+                    history = load_processed_numbers(SENT_HISTORY, REPORTS_DIR)
                     blacklist = load_blacklist(self.blacklist_path)
                     pending = [c for c in contacts if c["phone"] not in history and c["phone"] not in blacklist]
 
