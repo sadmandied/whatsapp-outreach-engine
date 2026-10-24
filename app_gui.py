@@ -450,6 +450,21 @@ class ModernOutreachApp(ctk.CTk):
         self._pacing_row(pacing_card, "Batch Size limit:", 0, "20", "batch_entry")
         self._pacing_row(pacing_card, "Minimum Delay (seconds):", 1, "15", "min_delay_entry")
         self._pacing_row(pacing_card, "Maximum Delay (seconds):", 2, "28", "max_delay_entry")
+        self._pacing_row(pacing_card, "Rest Between Batches (mins):", 3, "15", "batch_rest_entry")
+
+        # Continuous Autopilot Toggle
+        self.autopilot_var = ctk.BooleanVar(value=True)
+        autopilot_cb = ctk.CTkCheckBox(
+            pacing_card,
+            text="Continuous Autopilot (Auto-loop batches with rest pauses)",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color=THEME["text_primary"],
+            variable=self.autopilot_var,
+            fg_color=THEME["btn_primary"],
+            hover_color=THEME["btn_primary_hover"],
+            corner_radius=3
+        )
+        autopilot_cb.grid(row=4, column=0, columnspan=2, padx=14, pady=(8, 4), sticky="w")
 
         # Warm-up Mode Toggle
         self.warmup_var = ctk.BooleanVar(value=False)
@@ -463,11 +478,11 @@ class ModernOutreachApp(ctk.CTk):
             hover_color=THEME["btn_primary_hover"],
             corner_radius=3
         )
-        warmup_cb.grid(row=3, column=0, columnspan=2, padx=14, pady=(8, 10), sticky="w")
+        warmup_cb.grid(row=5, column=0, columnspan=2, padx=14, pady=(4, 10), sticky="w")
 
         # Blacklist Status Row
         bl_row = ctk.CTkFrame(pacing_card, fg_color="transparent")
-        bl_row.grid(row=4, column=0, columnspan=2, padx=14, pady=(0, 10), sticky="ew")
+        bl_row.grid(row=6, column=0, columnspan=2, padx=14, pady=(0, 10), sticky="ew")
         
         self.bl_status_lbl = ctk.CTkLabel(
             bl_row,
@@ -602,9 +617,9 @@ class ModernOutreachApp(ctk.CTk):
         
         cancel_sched_btn = ctk.CTkButton(
             self.schedule_banner,
-            text="Cancel Schedule",
+            text="Cancel",
             font=ctk.CTkFont(size=10),
-            width=90,
+            width=60,
             height=22,
             fg_color=THEME["btn_secondary"],
             hover_color=THEME["btn_danger_hover"],
@@ -612,7 +627,21 @@ class ModernOutreachApp(ctk.CTk):
             corner_radius=3,
             command=self._cancel_schedule
         )
-        cancel_sched_btn.pack(side="right", padx=10, pady=6)
+        cancel_sched_btn.pack(side="right", padx=(4, 10), pady=6)
+
+        self.skip_rest_btn = ctk.CTkButton(
+            self.schedule_banner,
+            text="▶ Start Now",
+            font=ctk.CTkFont(size=10, weight="bold"),
+            width=78,
+            height=22,
+            fg_color=THEME["btn_primary"],
+            hover_color=THEME["btn_primary_hover"],
+            text_color=THEME["text_primary"],
+            corner_radius=3,
+            command=self._skip_rest_and_start
+        )
+        self.skip_rest_btn.pack(side="right", padx=(0, 4), pady=6)
 
         # Telemetry KPI Dashboard
         kpi_row = ctk.CTkFrame(right_column, fg_color=THEME["surface_subtle"], corner_radius=6, border_width=1, border_color=THEME["border"])
@@ -950,6 +979,10 @@ class ModernOutreachApp(ctk.CTk):
             self.status_pill.configure(text="● Paused", text_color=THEME["status_paused"])
 
     def _stop_campaign(self):
+        if self.scheduler.is_active():
+            self.scheduler.cancel()
+            self.schedule_banner.grid_forget()
+
         if self.engine:
             self.engine.stop()
             self.status_pill.configure(text="● Stopping...", text_color=THEME["status_stopped"])
@@ -994,12 +1027,19 @@ class ModernOutreachApp(ctk.CTk):
         self.scheduler.cancel()
         self.schedule_banner.grid_forget()
         self.status_pill.configure(text="● Engine Ready", text_color=THEME["status_ready"])
-        self._append_log("Campaign schedule cancelled.")
+        self.status_detail_lbl.configure(text="Schedule / Autopilot paused.")
+        self._append_log("Campaign schedule / Autopilot rest cancelled.", "warning")
+
+    def _skip_rest_and_start(self):
+        self.scheduler.cancel()
+        self.schedule_banner.grid_forget()
+        self._append_log("Autopilot rest skipped by operator. Starting next batch immediately...", "info")
+        self._start_campaign()
 
     def _on_scheduler_tick(self, remaining_sec: int, time_repr: str):
         def update():
             self.schedule_banner_lbl.configure(
-                text=f"⏰ Scheduled for {self.scheduler.get_target_display()} (Starts in {time_repr})"
+                text=f"⏰ {self.scheduler.get_target_display()} — Next batch starts in {time_repr}"
             )
         self.after(0, update)
 
@@ -1139,15 +1179,56 @@ class ModernOutreachApp(ctk.CTk):
                     self.kpi_skipped.configure(text=str(summary.get("skipped", 0)))
                     self.kpi_remaining.configure(text="0")
                     self.progress_bar.set(1.0)
-                    self.status_detail_lbl.configure(text="Batch completed. Chrome remains open.")
-                    self.status_pill.configure(text="● Completed", text_color=THEME["status_ready"])
                     self._set_state(False)
                     self._refresh_contacts_count()
 
-                    reports = summary.get("reports", {})
-                    if "html" in reports:
-                        if messagebox.askyesno("Batch Finished", "Session complete. Open the interactive analytics report now?"):
-                            webbrowser.open(reports["html"])
+                    # Check pending count
+                    c_path = self.contacts_entry.get().strip()
+                    contacts = load_contacts(c_path) if os.path.exists(c_path) else []
+                    history = load_sent_history(SENT_HISTORY)
+                    blacklist = load_blacklist(self.blacklist_path)
+                    pending = [c for c in contacts if c["phone"] not in history and c["phone"] not in blacklist]
+
+                    is_cancelled = self.engine and self.engine.cancel_event.is_set()
+
+                    if self.autopilot_var.get() and len(pending) > 0 and not is_cancelled:
+                        try:
+                            rest_mins = int(self.batch_rest_entry.get().strip())
+                        except ValueError:
+                            rest_mins = 15
+
+                        rest_seconds = max(10, rest_mins * 60)
+                        self.status_detail_lbl.configure(
+                            text=f"Batch complete ({summary.get('sent', 0)} sent). Autopilot resting for {rest_mins}m before next batch ({len(pending)} leads remaining)..."
+                        )
+                        self.status_pill.configure(text="● Autopilot Rest", text_color=THEME["status_paused"])
+                        self._append_log(
+                            f"Batch complete. Autopilot active: resting for {rest_mins}m to protect account safety. Next batch starts automatically ({len(pending)} pending leads).",
+                            "info"
+                        )
+
+                        self.schedule_banner.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 10))
+                        self.schedule_banner_lbl.configure(
+                            text=f"☕ Autopilot Rest: Next batch starts in {rest_mins}m 00s ({len(pending)} leads remaining)"
+                        )
+
+                        self.scheduler.schedule_countdown(
+                            rest_seconds,
+                            callback=lambda: self.after(0, self._start_campaign),
+                            label="Autopilot Rest"
+                        )
+                    else:
+                        self.status_detail_lbl.configure(text="Batch completed. Chrome remains open.")
+                        self.status_pill.configure(text="● Completed", text_color=THEME["status_ready"])
+
+                        if len(pending) == 0 and not is_cancelled:
+                            self._append_log("Entire contact list has been processed! All campaigns complete.", "success")
+                            messagebox.showinfo("Campaign Complete", "All contacts in your queue have been processed successfully!")
+
+                        reports = summary.get("reports", {})
+                        if "html" in reports and not self.autopilot_var.get():
+                            if messagebox.askyesno("Batch Finished", "Session complete. Open the interactive analytics report now?"):
+                                webbrowser.open(reports["html"])
 
                 self.after(0, finalize_ui)
 

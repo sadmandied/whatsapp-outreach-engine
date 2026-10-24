@@ -34,8 +34,38 @@ class CampaignScheduler:
 
     def schedule_in_minutes(self, minutes: int, callback: Callable[[], None]) -> None:
         """Schedules a campaign to trigger after X minutes."""
-        target_dt = datetime.now() + timedelta(minutes=minutes)
-        self.schedule_at(target_dt.strftime("%H:%M"), callback)
+        self.schedule_countdown(minutes * 60, callback, label=f"in {minutes} mins")
+
+    def schedule_countdown(self, seconds: int, callback: Callable[[], None], label: str = "") -> None:
+        """Schedules execution after an exact number of seconds countdown."""
+        self.cancel()
+        self._cancel_event.clear()
+        target_dt = datetime.now() + timedelta(seconds=seconds)
+        self._target_epoch = target_dt.timestamp()
+        self._target_display = label or target_dt.strftime("%I:%M:%S %p")
+        self._is_scheduled = True
+
+        def worker():
+            while not self._cancel_event.is_set():
+                remaining = int(self._target_epoch - time.time())
+                if remaining <= 0:
+                    break
+
+                hours, rem = divmod(remaining, 3600)
+                mins, secs = divmod(rem, 60)
+                time_repr = f"{mins:02d}:{secs:02d}" if hours == 0 else f"{hours:02d}:{mins:02d}:{secs:02d}"
+
+                if self.on_tick:
+                    self.on_tick(remaining, time_repr)
+
+                time.sleep(1)
+
+            if not self._cancel_event.is_set():
+                self._is_scheduled = False
+                callback()
+
+        self._thread = threading.Thread(target=worker, daemon=True)
+        self._thread.start()
 
     def schedule_at(self, time_str: str, callback: Callable[[], None]) -> None:
         """
