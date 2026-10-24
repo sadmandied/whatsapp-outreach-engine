@@ -210,10 +210,21 @@ class OutreachEngine:
             "message_preview": personalized_text
         }
 
+        # Pre-flight: dismiss any lingering dialogs from previous contacts
+        try:
+            dangling = page.query_selector_all('div[role="dialog"], [aria-modal="true"]')
+            for d in dangling:
+                btn = d.query_selector('button:has-text("OK"), div[role="button"]:has-text("OK"), button')
+                if btn:
+                    btn.click()
+                    time.sleep(0.5)
+        except Exception:
+            pass
+
         # 1. Open the conversation
         url = f"https://web.whatsapp.com/send?phone={phone}&text={encoded_msg}"
         try:
-            page.goto(url, wait_until="domcontentloaded", timeout=45000)
+            page.goto(url, wait_until="domcontentloaded", timeout=35000)
         except Exception:
             pass
 
@@ -230,79 +241,83 @@ class OutreachEngine:
                 result["status"] = "CANCELLED"
                 return result
 
-            # A. Check for 'Phone number shared via url is invalid' popup
-            invalid_popup = page.query_selector('div[data-animate-modal-body="true"], div[data-tab="3"], div[role="dialog"]')
-            if invalid_popup:
-                modal_text = (invalid_popup.inner_text() or "").lower()
-                if any(k in modal_text for k in ["invalid", "isn't on whatsapp", "not on whatsapp", "not registered"]):
-                    self.log(f"Phone +{phone} is not registered on WhatsApp. Skipping.", "warning")
-                    result["status"] = "NOT_ON_WHATSAPP"
-                    result["notes"] = "Unregistered phone number"
-
-                    # Dismiss modal
+            try:
+                # A. Check for 'Phone number shared via url is invalid' popup
+                dialogs = page.query_selector_all('div[role="dialog"], [aria-modal="true"], div[data-animate-modal-body="true"]')
+                for dialog in dialogs:
                     try:
-                        ok_btn = page.query_selector('button:has-text("OK"), div[role="button"]:has-text("OK"), button[aria-label="OK"]')
-                        if ok_btn:
-                            ok_btn.click()
+                        modal_text = (dialog.inner_text() or "").lower()
+                        if any(k in modal_text for k in ["invalid", "isn't on whatsapp", "not on whatsapp", "not registered", "phone number shared via url"]):
+                            self.log(f"Phone +{phone} is not registered on WhatsApp. Skipping.", "warning")
+                            result["status"] = "NOT_ON_WHATSAPP"
+                            result["notes"] = "Unregistered phone number"
+
+                            # Dismiss modal
+                            try:
+                                ok_btn = dialog.query_selector('button:has-text("OK"), div[role="button"]:has-text("OK"), button[aria-label="OK"], button')
+                                if ok_btn:
+                                    ok_btn.click()
+                            except Exception:
+                                pass
+                            return result
                     except Exception:
-                        pass
-                    return result
-
-            # B. If Media Attachment is specified, attach flyer
-            if media_path and os.path.exists(media_path):
-                try:
-                    # Look for attach icon
-                    attach_btn = page.query_selector('span[data-icon="plus"], span[data-icon="attach-menu-plus"], button[aria-label="Attach"]')
-                    file_input = page.query_selector('input[type="file"]')
-
-                    if file_input:
-                        file_input.set_input_files(media_path)
-                        self.log(f"Media flyer attached for +{phone}. Awaiting preview...", "info")
-                        time.sleep(2)
-
-                        # Click media send button
-                        media_send_btn = page.wait_for_selector(
-                            'span[data-icon="send"], span[data-icon="wds-ic-send-filled"], div[aria-label="Send"]',
-                            timeout=10000
-                        )
-                        if media_send_btn:
-                            media_send_btn.click()
-                            dispatched = True
-                            self.log(f"Media + Caption dispatched to +{phone}!", "success")
-                            break
-                    elif attach_btn:
-                        attach_btn.click()
-                        time.sleep(1)
                         continue
-                except Exception as ex:
-                    self.log(f"Media attach attempt failed, falling back to text: {ex}", "warning")
 
-            # C. Locate standard text Send button
-            send_btn = page.query_selector(
-                'button[aria-label="Send"], span[data-icon="send"], span[data-icon="wds-ic-send-filled"]'
-            )
+                # B. If Media Attachment is specified, attach flyer
+                if media_path and os.path.exists(media_path):
+                    try:
+                        attach_btn = page.query_selector('span[data-icon="plus"], span[data-icon="attach-menu-plus"], button[aria-label="Attach"]')
+                        file_input = page.query_selector('input[type="file"]')
 
-            if send_btn and send_btn.is_visible():
+                        if file_input:
+                            file_input.set_input_files(media_path)
+                            self.log(f"Media flyer attached for +{phone}. Awaiting preview...", "info")
+                            time.sleep(2)
+
+                            media_send_btn = page.wait_for_selector(
+                                'span[data-icon="send"], span[data-icon="wds-ic-send-filled"], div[aria-label="Send"]',
+                                timeout=10000
+                            )
+                            if media_send_btn:
+                                media_send_btn.click()
+                                dispatched = True
+                                self.log(f"Media + Caption dispatched to +{phone}!", "success")
+                                break
+                        elif attach_btn:
+                            attach_btn.click()
+                            time.sleep(1)
+                            continue
+                    except Exception as ex:
+                        self.log(f"Media attach attempt failed, falling back to text: {ex}", "warning")
+
+                # C. Locate standard text Send button
                 try:
-                    send_btn.click()
-                    dispatched = True
-                    self.log(f"Message dispatched successfully to +{phone}!", "success")
-                    break
-                except Exception:
-                    pass
-
-            # D. Fallback: Press Enter inside active composer
-            chat_input = page.query_selector('footer div[contenteditable="true"]')
-            if chat_input and chat_input.is_visible():
-                try:
-                    text_content = chat_input.inner_text().strip()
-                    if text_content:
-                        chat_input.press("Enter")
+                    send_btn = page.query_selector(
+                        'button[aria-label="Send"], span[data-icon="send"], span[data-icon="wds-ic-send-filled"]'
+                    )
+                    if send_btn and send_btn.is_visible():
+                        send_btn.click()
                         dispatched = True
-                        self.log(f"Message dispatched via Enter key to +{phone}!", "success")
+                        self.log(f"Message dispatched successfully to +{phone}!", "success")
                         break
                 except Exception:
                     pass
+
+                # D. Fallback: Press Enter inside active composer
+                try:
+                    chat_input = page.query_selector('footer div[contenteditable="true"]')
+                    if chat_input and chat_input.is_visible():
+                        text_content = (chat_input.inner_text() or "").strip()
+                        if text_content:
+                            chat_input.press("Enter")
+                            dispatched = True
+                            self.log(f"Message dispatched via Enter key to +{phone}!", "success")
+                            break
+                except Exception:
+                    pass
+
+            except Exception:
+                pass
 
             time.sleep(1)
 
@@ -433,7 +448,18 @@ class OutreachEngine:
                     self.on_progress(idx, total, phone, name, "SENDING", 0)
 
                 self.log(f"[{idx}/{total}] Dispatching to +{phone}...", "info")
-                record = self.send_contact(page, contact, message_template, media_path=media_path)
+                try:
+                    record = self.send_contact(page, contact, message_template, media_path=media_path)
+                except Exception as ex:
+                    self.log(f"Error dispatching to +{phone}: {ex}", "error")
+                    record = {
+                        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "phone": phone,
+                        "name": name,
+                        "status": "FAILED",
+                        "notes": f"Dispatch error: {ex}",
+                        "message_preview": ""
+                    }
                 records.append(record)
 
                 if record["status"] == "SENT":

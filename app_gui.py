@@ -954,6 +954,18 @@ class ModernOutreachApp(ctk.CTk):
             self.engine.stop()
             self.status_pill.configure(text="● Stopping...", text_color=THEME["status_stopped"])
 
+            def monitor_stop():
+                if self.worker_thread and self.worker_thread.is_alive():
+                    self.worker_thread.join(timeout=3.0)
+                self.after(0, lambda: self._set_state(False))
+                self.after(0, lambda: self.status_detail_lbl.configure(text="Campaign stopped by operator."))
+                self.after(0, lambda: self._append_log("Campaign stopped.", "warning"))
+                self.after(0, self._refresh_contacts_count)
+
+            threading.Thread(target=monitor_stop, daemon=True).start()
+        else:
+            self._set_state(False)
+
     # ---------------- Scheduler Controls ----------------
     def _schedule_campaign_dialog(self):
         time_choice = simpledialog.askstring(
@@ -1139,28 +1151,34 @@ class ModernOutreachApp(ctk.CTk):
 
                 self.after(0, finalize_ui)
 
-            blacklist_set = load_blacklist(self.blacklist_path)
+            try:
+                blacklist_set = load_blacklist(self.blacklist_path)
 
-            self.engine = OutreachEngine(
-                profile_dir=self.profile_dir,
-                history_file=SENT_HISTORY,
-                reports_dir=REPORTS_DIR,
-                port=self.cdp_port,
-                on_log=log_handler,
-                on_progress=progress_handler,
-                on_finished=completion_handler
-            )
+                self.engine = OutreachEngine(
+                    profile_dir=self.profile_dir,
+                    history_file=SENT_HISTORY,
+                    reports_dir=REPORTS_DIR,
+                    port=self.cdp_port,
+                    on_log=log_handler,
+                    on_progress=progress_handler,
+                    on_finished=completion_handler
+                )
 
-            self.engine.run_campaign(
-                queue=queue,
-                message_template=template,
-                media_path=media if os.path.exists(media) else None,
-                min_delay=min_d,
-                max_delay=max_d,
-                blacklist=blacklist_set,
-                warmup_mode=warmup,
-                keep_browser_open=True
-            )
+                self.engine.run_campaign(
+                    queue=queue,
+                    message_template=template,
+                    media_path=media if os.path.exists(media) else None,
+                    min_delay=min_d,
+                    max_delay=max_d,
+                    blacklist=blacklist_set,
+                    warmup_mode=warmup,
+                    keep_browser_open=True
+                )
+            except Exception as ex:
+                self.after(0, lambda: self._append_log(f"Engine interrupted: {ex}", "error"))
+                self.after(0, lambda: self.status_detail_lbl.configure(text=f"Engine stopped due to error: {ex}"))
+                self.after(0, lambda: self.status_pill.configure(text="● Error", text_color=THEME["btn_danger"]))
+                self.after(0, lambda: self._set_state(False))
 
         self.worker_thread = threading.Thread(target=worker, daemon=True)
         self.worker_thread.start()
